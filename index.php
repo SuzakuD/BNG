@@ -7,11 +7,11 @@ if (!file_exists(__DIR__ . '/data/app.db')) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ร้านอุปกรณ์ตกปลา</title>
+    <title>Fishing Equipment Store</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="public/css/style.css" rel="stylesheet">
@@ -21,7 +21,7 @@ if (!file_exists(__DIR__ . '/data/app.db')) {
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
             <a class="navbar-brand" href="#" onclick="loadPage('home')">
-                <i class="fas fa-fish"></i> ร้านอุปกรณ์ตกปลา
+                <i class="fas fa-fish"></i> Fishing Equipment Store
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -31,16 +31,16 @@ if (!file_exists(__DIR__ . '/data/app.db')) {
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="loadPage('home')">หน้าแรก</a>
+                        <a class="nav-link" href="#" onclick="loadPage('home')">Home</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#" onclick="showCart()">
-                            <i class="fas fa-shopping-cart"></i> ตะกร้า 
+                            <i class="fas fa-shopping-cart"></i> Cart 
                             <span id="cart-count" class="badge bg-danger">0</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="loadPage('contact')">ติดต่อ</a>
+                        <a class="nav-link" href="#" onclick="loadPage('contact')">Contact</a>
                     </li>
                 </ul>
                 
@@ -57,9 +57,9 @@ if (!file_exists(__DIR__ . '/data/app.db')) {
             <div class="col-md-3 bg-light p-3">
                 <!-- Search Box -->
                 <div class="mb-4">
-                    <h5>ค้นหาสินค้า</h5>
+                    <h5>Search Products</h5>
                     <div class="input-group">
-                        <input type="text" id="search-input" class="form-control" placeholder="ค้นหา...">
+                        <input type="text" id="search-input" class="form-control" placeholder="Search...">
                         <button class="btn btn-outline-secondary" onclick="searchProducts()">
                             <i class="fas fa-search"></i>
                         </button>
@@ -68,7 +68,7 @@ if (!file_exists(__DIR__ . '/data/app.db')) {
 
                 <!-- Categories -->
                 <div class="mb-4">
-                    <h5>หมวดหมู่สินค้า</h5>
+                    <h5>Categories</h5>
                     <div id="categories-list">
                         <!-- Categories will be loaded here -->
                     </div>
@@ -76,25 +76,25 @@ if (!file_exists(__DIR__ . '/data/app.db')) {
 
                 <!-- Admin Panel (only visible for admin users) -->
                 <div id="admin-panel" class="mb-4" style="display: none;">
-                    <h5 class="text-danger">แผงควบคุมผู้ดูแล</h5>
+                    <h5 class="text-danger">Admin Panel</h5>
                     <div class="list-group">
                         <button class="list-group-item list-group-item-action" onclick="showAdminTab('products')">
-                            <i class="fas fa-box"></i> จัดการสินค้า
+                            <i class="fas fa-box"></i> Manage Products
                         </button>
                         <button class="list-group-item list-group-item-action" onclick="showAdminTab('categories')">
-                            <i class="fas fa-tags"></i> จัดการหมวดหมู่
+                            <i class="fas fa-tags"></i> Manage Categories
                         </button>
                         <button class="list-group-item list-group-item-action" onclick="showAdminTab('users')">
-                            <i class="fas fa-users"></i> จัดการผู้ใช้
+                            <i class="fas fa-users"></i> Manage Users
                         </button>
                         <button class="list-group-item list-group-item-action" onclick="showAdminTab('orders')">
-                            <i class="fas fa-shopping-bag"></i> จัดการคำสั่งซื้อ
+                            <i class="fas fa-shopping-bag"></i> Manage Orders
                         </button>
                         <button class="list-group-item list-group-item-action" onclick="showAdminTab('promotions')">
-                            <i class="fas fa-percent"></i> จัดการโปรโมชั่น
+                            <i class="fas fa-percent"></i> Manage Promotions
                         </button>
                         <button class="list-group-item list-group-item-action" onclick="showAdminTab('reports')">
-                            <i class="fas fa-chart-bar"></i> รายงาน
+                            <i class="fas fa-chart-bar"></i> Reports
                         </button>
                     </div>
                 </div>
@@ -119,20 +119,20 @@ if (!file_exists(__DIR__ . '/data/app.db')) {
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">เข้าสู่ระบบ</h5>
+                    <h5 class="modal-title">Login</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="login-form">
                         <div class="mb-3">
-                            <label for="login-username" class="form-label">ชื่อผู้ใช้</label>
+                            <label for="login-username" class="form-label">Username</label>
                             <input type="text" class="form-control" id="login-username" required>
                         </div>
                         <div class="mb-3">
-                            <label for="login-password" class="form-label">รหัสผ่าน</label>
+                            <label for="login-password" class="form-label">Password</label>
                             <input type="password" class="form-control" id="login-password" required>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">เข้าสู่ระบบ</button>
+                        <button type="submit" class="btn btn-primary w-100">Sign in</button>
                     </form>
                     <div id="login-message" class="mt-3"></div>
                 </div>
@@ -145,24 +145,24 @@ if (!file_exists(__DIR__ . '/data/app.db')) {
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">สมัครสมาชิก</h5>
+                    <h5 class="modal-title">Register</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="register-form">
                         <div class="mb-3">
-                            <label for="register-username" class="form-label">ชื่อผู้ใช้</label>
+                            <label for="register-username" class="form-label">Username</label>
                             <input type="text" class="form-control" id="register-username" required>
                         </div>
                         <div class="mb-3">
-                            <label for="register-password" class="form-label">รหัสผ่าน</label>
+                            <label for="register-password" class="form-label">Password</label>
                             <input type="password" class="form-control" id="register-password" required>
                         </div>
                         <div class="mb-3">
-                            <label for="register-confirm-password" class="form-label">ยืนยันรหัสผ่าน</label>
+                            <label for="register-confirm-password" class="form-label">Confirm password</label>
                             <input type="password" class="form-control" id="register-confirm-password" required>
                         </div>
-                        <button type="submit" class="btn btn-success w-100">สมัครสมาชิก</button>
+                        <button type="submit" class="btn btn-success w-100">Create account</button>
                     </form>
                     <div id="register-message" class="mt-3"></div>
                 </div>
@@ -175,7 +175,7 @@ if (!file_exists(__DIR__ . '/data/app.db')) {
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">ตะกร้าสินค้า</h5>
+                    <h5 class="modal-title">Shopping Cart</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -183,8 +183,8 @@ if (!file_exists(__DIR__ . '/data/app.db')) {
                         <!-- Cart items will be loaded here -->
                     </div>
                     <div class="d-flex justify-content-between align-items-center mt-3">
-                        <h5>รวม: <span id="cart-total">0</span> บาท</h5>
-                        <button class="btn btn-success" onclick="showCheckout()" id="checkout-btn">ชำระเงิน</button>
+                        <h5>Total: <span id="cart-total">0</span> THB</h5>
+                        <button class="btn btn-success" onclick="showCheckout()" id="checkout-btn">Checkout</button>
                     </div>
                 </div>
             </div>
@@ -196,7 +196,7 @@ if (!file_exists(__DIR__ . '/data/app.db')) {
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">ชำระเงิน</h5>
+                    <h5 class="modal-title">Checkout</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -213,7 +213,7 @@ if (!file_exists(__DIR__ . '/data/app.db')) {
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">ยืนยันการสั่งซื้อ</h5>
+                    <h5 class="modal-title">Order Confirmation</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -230,7 +230,7 @@ if (!file_exists(__DIR__ . '/data/app.db')) {
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">ใบเสร็จรับเงิน</h5>
+                    <h5 class="modal-title">Receipt</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -239,7 +239,7 @@ if (!file_exists(__DIR__ . '/data/app.db')) {
                     </div>
                     <div class="text-center mt-3">
                         <button class="btn btn-primary" onclick="printReceipt()">
-                            <i class="fas fa-print"></i> พิมพ์ใบเสร็จ
+                            <i class="fas fa-print"></i> Print receipt
                         </button>
                     </div>
                 </div>

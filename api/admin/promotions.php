@@ -113,7 +113,7 @@ function validatePromotion($pdo) {
     $code = $_GET['code'] ?? '';
     
     if (empty($code)) {
-        throw new Exception('กรุณากรอกรหัสโปรโมชั่น');
+        throw new Exception('Please enter a promotion code');
     }
     
     $stmt = $pdo->prepare("SELECT * FROM promotions WHERE code = ? AND expire_date > datetime('now')");
@@ -121,13 +121,13 @@ function validatePromotion($pdo) {
     $promotion = $stmt->fetch();
     
     if (!$promotion) {
-        throw new Exception('รหัสโปรโมชั่นไม่ถูกต้องหรือหมดอายุแล้ว');
+        throw new Exception('Invalid or expired promotion code');
     }
     
     echo json_encode([
         'valid' => true,
         'promotion' => $promotion,
-        'message' => "ใช้รหัสโปรโมชั่นได้ ลด {$promotion['discount']}%"
+        'message' => "Promotion applied: {$promotion['discount']}% off"
     ]);
 }
 
@@ -137,17 +137,17 @@ function createPromotion($pdo, $input) {
     $expireDate = $input['expire_date'] ?? '';
     
     if (empty($code) || $discount <= 0 || $discount > 100 || empty($expireDate)) {
-        throw new Exception('กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง');
+        throw new Exception('Please provide valid code, discount (1-100), and expiry date');
     }
     
     // Validate date format
     $date = DateTime::createFromFormat('Y-m-d', $expireDate);
     if (!$date || $date->format('Y-m-d') !== $expireDate) {
-        throw new Exception('รูปแบบวันที่ไม่ถูกต้อง');
+        throw new Exception('Invalid date format (expected YYYY-MM-DD)');
     }
     
     if (strtotime($expireDate) <= time()) {
-        throw new Exception('วันหมดอายุต้องเป็นวันในอนาคต');
+        throw new Exception('Expire date must be in the future');
     }
     
     // Check if code already exists
@@ -155,7 +155,7 @@ function createPromotion($pdo, $input) {
     $stmt->execute([$code]);
     
     if ($stmt->fetchColumn() > 0) {
-        throw new Exception('รหัสโปรโมชั่นนี้มีอยู่แล้ว');
+        throw new Exception('This promotion code already exists');
     }
     
     $stmt = $pdo->prepare("INSERT INTO promotions (code, discount, expire_date) VALUES (?, ?, ?)");
@@ -165,7 +165,7 @@ function createPromotion($pdo, $input) {
     
     echo json_encode([
         'success' => true,
-        'message' => 'เพิ่มโปรโมชั่นสำเร็จ',
+        'message' => 'Promotion created successfully',
         'promotion_id' => $promotionId
     ]);
 }
@@ -177,13 +177,13 @@ function updatePromotion($pdo, $input) {
     $expireDate = $input['expire_date'] ?? '';
     
     if (!$id || empty($code) || $discount <= 0 || $discount > 100 || empty($expireDate)) {
-        throw new Exception('กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง');
+        throw new Exception('Please provide valid code, discount (1-100), and expiry date');
     }
     
     // Validate date format
     $date = DateTime::createFromFormat('Y-m-d', $expireDate);
     if (!$date || $date->format('Y-m-d') !== $expireDate) {
-        throw new Exception('รูปแบบวันที่ไม่ถูกต้อง');
+        throw new Exception('Invalid date format (expected YYYY-MM-DD)');
     }
     
     // Check if code already exists (excluding current promotion)
@@ -191,7 +191,7 @@ function updatePromotion($pdo, $input) {
     $stmt->execute([$code, $id]);
     
     if ($stmt->fetchColumn() > 0) {
-        throw new Exception('รหัสโปรโมชั่นนี้มีอยู่แล้ว');
+        throw new Exception('This promotion code already exists');
     }
     
     $stmt = $pdo->prepare("UPDATE promotions SET code = ?, discount = ?, expire_date = ? WHERE id = ?");
@@ -199,7 +199,7 @@ function updatePromotion($pdo, $input) {
     
     echo json_encode([
         'success' => true,
-        'message' => 'อัปเดตโปรโมชั่นสำเร็จ'
+        'message' => 'Promotion updated successfully'
     ]);
 }
 
@@ -207,7 +207,7 @@ function deletePromotion($pdo) {
     $id = $_GET['id'] ?? 0;
     
     if (!$id) {
-        throw new Exception('ไม่พบรหัสโปรโมชั่น');
+        throw new Exception('Promotion ID is required');
     }
     
     $stmt = $pdo->prepare("DELETE FROM promotions WHERE id = ?");
@@ -215,7 +215,7 @@ function deletePromotion($pdo) {
     
     echo json_encode([
         'success' => true,
-        'message' => 'ลบโปรโมชั่นสำเร็จ'
+        'message' => 'Promotion deleted successfully'
     ]);
 }
 ?>

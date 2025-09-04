@@ -31,7 +31,7 @@ async function initializeApp() {
         
     } catch (error) {
         console.error('Failed to initialize app:', error);
-        showAlert('เกิดข้อผิดพลาดในการโหลดแอปพลิเคชัน', 'danger');
+        showAlert('Failed to load application', 'danger');
     }
 }
 
@@ -77,9 +77,9 @@ function updateAuthUI() {
                     <i class="fas fa-user"></i> ${currentUser.username}
                 </a>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="showUserOrders()">คำสั่งซื้อของฉัน</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="showUserOrders()">My Orders</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="#" onclick="logout()">ออกจากระบบ</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="logout()">Sign out</a></li>
                 </ul>
             </li>
         `;
@@ -91,10 +91,10 @@ function updateAuthUI() {
     } else {
         authNav.innerHTML = `
             <li class="nav-item">
-                <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">เข้าสู่ระบบ</a>
+                <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">Login</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">สมัครสมาชิก</a>
+                <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">Register</a>
             </li>
         `;
         
@@ -130,7 +130,7 @@ async function handleLogin(e) {
             messageDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
         }
     } catch (error) {
-        messageDiv.innerHTML = `<div class="alert alert-danger">เกิดข้อผิดพลาด</div>`;
+        messageDiv.innerHTML = `<div class="alert alert-danger">An error occurred</div>`;
     }
 }
 
@@ -163,7 +163,7 @@ async function handleRegister(e) {
             messageDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
         }
     } catch (error) {
-        messageDiv.innerHTML = `<div class="alert alert-danger">เกิดข้อผิดพลาด</div>`;
+        messageDiv.innerHTML = `<div class="alert alert-danger">An error occurred</div>`;
     }
 }
 
@@ -174,10 +174,10 @@ async function logout() {
         updateAuthUI();
         cartCount = 0;
         updateCartCount();
-        showAlert('ออกจากระบบสำเร็จ', 'success');
+        showAlert('Signed out successfully', 'success');
         loadPage('home');
     } catch (error) {
-        showAlert('เกิดข้อผิดพลาดในการออกจากระบบ', 'danger');
+        showAlert('Failed to sign out', 'danger');
     }
 }
 
@@ -212,9 +212,9 @@ async function loadHomePage() {
         
         let html = `
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>สินค้าทั้งหมด</h2>
+                <h2>All Products</h2>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="text-muted">แสดง ${data.products.length} จาก ${data.total} รายการ</span>
+                    <span class="text-muted">Showing ${data.products.length} of ${data.total}</span>
                 </div>
             </div>
             <div class="row" id="products-container">
@@ -224,8 +224,8 @@ async function loadHomePage() {
             html += `
                 <div class="col-12 text-center py-5">
                     <i class="fas fa-fish fa-3x text-muted mb-3"></i>
-                    <h4>ยังไม่มีสินค้า</h4>
-                    <p class="text-muted">กรุณารอสักครู่ เรากำลังเพิ่มสินค้าใหม่</p>
+                    <h4>No products</h4>
+                    <p class="text-muted">Please wait while we add new products.</p>
                 </div>
             `;
         } else {
@@ -244,13 +244,13 @@ async function loadHomePage() {
         mainContent.innerHTML = html;
     } catch (error) {
         console.error('Failed to load products:', error);
-        showAlert('ไม่สามารถโหลดสินค้าได้', 'danger');
+        showAlert('Failed to load products', 'danger');
     }
 }
 
 function createProductCard(product) {
     const stockClass = product.stock < 10 ? 'stock-low' : product.stock < 50 ? 'stock-medium' : 'stock-high';
-    const stockText = product.stock === 0 ? 'สินค้าหมด' : `คงเหลือ ${product.stock} ชิ้น`;
+    const stockText = product.stock === 0 ? 'Out of stock' : `In stock ${product.stock}`;
     
     return `
         <div class="col-md-4 col-lg-3 mb-4">
@@ -261,7 +261,7 @@ function createProductCard(product) {
                     <h5 class="card-title">${product.name}</h5>
                     <p class="card-text text-muted small flex-grow-1">${product.description || ''}</p>
                     <div class="mb-2">
-                        <span class="price">${Number(product.price).toLocaleString()} บาท</span>
+                        <span class="price">${Number(product.price).toLocaleString()} THB</span>
                     </div>
                     <div class="mb-3">
                         <small class="${stockClass}">${stockText}</small>
@@ -269,7 +269,7 @@ function createProductCard(product) {
                     <button class="btn btn-primary w-100" 
                             onclick="addToCart(${product.id})" 
                             ${product.stock === 0 ? 'disabled' : ''}>
-                        <i class="fas fa-cart-plus"></i> เพิ่มลงตะกร้า
+                        <i class="fas fa-cart-plus"></i> Add to cart
                     </button>
                 </div>
             </div>
@@ -283,41 +283,41 @@ function loadContactPage() {
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-md-8">
-                    <h2 class="mb-4">ติดต่อเรา</h2>
+                    <h2 class="mb-4">Contact Us</h2>
                     <div class="card">
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <h5><i class="fas fa-map-marker-alt"></i> ที่อยู่</h5>
-                                    <p>123 ถนนตกปลา<br>
-                                    เขตปลาใหญ่ กรุงเทพฯ 10110</p>
+                                    <h5><i class="fas fa-map-marker-alt"></i> Address</h5>
+                                    <p>123 Fishing St.<br>
+                                    Bangna, Bangkok 10110</p>
                                     
-                                    <h5><i class="fas fa-phone"></i> โทรศัพท์</h5>
-                                    <p>02-123-4567</p>
+                                    <h5><i class="fas fa-phone"></i> Phone</h5>
+                                    <p>+66 2 123 4567</p>
                                     
-                                    <h5><i class="fas fa-envelope"></i> อีเมล</h5>
+                                    <h5><i class="fas fa-envelope"></i> Email</h5>
                                     <p>info@fishingstore.com</p>
                                     
-                                    <h5><i class="fas fa-clock"></i> เวลาทำการ</h5>
-                                    <p>จันทร์-ศุกร์: 8:00-18:00<br>
-                                    เสาร์-อาทิตย์: 9:00-17:00</p>
+                                    <h5><i class="fas fa-clock"></i> Business Hours</h5>
+                                    <p>Mon-Fri: 8:00-18:00<br>
+                                    Sat-Sun: 9:00-17:00</p>
                                 </div>
                                 <div class="col-md-6">
-                                    <h5>ส่งข้อความถึงเรา</h5>
+                                    <h5>Send us a message</h5>
                                     <form>
                                         <div class="mb-3">
-                                            <label class="form-label">ชื่อ</label>
+                                            <label class="form-label">Name</label>
                                             <input type="text" class="form-control" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label class="form-label">อีเมล</label>
+                                            <label class="form-label">Email</label>
                                             <input type="email" class="form-control" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label class="form-label">ข้อความ</label>
+                                            <label class="form-label">Message</label>
                                             <textarea class="form-control" rows="5" required></textarea>
                                         </div>
-                                        <button type="submit" class="btn btn-primary">ส่งข้อความ</button>
+                                        <button type="submit" class="btn btn-primary">Send message</button>
                                     </form>
                                 </div>
                             </div>
@@ -338,7 +338,7 @@ async function loadCategories() {
         const categoriesList = document.getElementById('categories-list');
         let html = `
             <div class="category-item ${currentCategory === null ? 'active' : ''}" onclick="filterByCategory(null)">
-                <i class="fas fa-th"></i> ทั้งหมด
+                <i class="fas fa-th"></i> All
             </div>
         `;
         
@@ -373,7 +373,7 @@ async function filterByCategory(categoryId) {
         updateCategoryUI();
     } catch (error) {
         console.error('Failed to filter products:', error);
-        showAlert('ไม่สามารถกรองสินค้าได้', 'danger');
+        showAlert('Failed to filter products', 'danger');
     }
 }
 
@@ -403,21 +403,21 @@ async function searchProducts() {
         const response = await fetch(`api/products.php?action=search&q=${encodeURIComponent(searchQuery)}`);
         const data = await response.json();
         
-        updateProductsDisplay(data, `ผลการค้นหา "${searchQuery}"`);
+        updateProductsDisplay(data, `Search results for "${searchQuery}"`);
     } catch (error) {
         console.error('Search failed:', error);
-        showAlert('ไม่สามารถค้นหาได้', 'danger');
+        showAlert('Search failed', 'danger');
     }
 }
 
-function updateProductsDisplay(data, title = 'สินค้าทั้งหมด') {
+function updateProductsDisplay(data, title = 'All Products') {
     const mainContent = document.getElementById('main-content');
     
     let html = `
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>${title}</h2>
             <div class="d-flex align-items-center gap-2">
-                <span class="text-muted">แสดง ${data.products.length} จาก ${data.total} รายการ</span>
+                <span class="text-muted">Showing ${data.products.length} of ${data.total}</span>
             </div>
         </div>
         <div class="row" id="products-container">
@@ -427,8 +427,8 @@ function updateProductsDisplay(data, title = 'สินค้าทั้งห�
         html += `
             <div class="col-12 text-center py-5">
                 <i class="fas fa-search fa-3x text-muted mb-3"></i>
-                <h4>ไม่พบสินค้า</h4>
-                <p class="text-muted">ลองค้นหาด้วยคำอื่น หรือดูสินค้าทั้งหมด</p>
+                <h4>No products found</h4>
+                <p class="text-muted">Try a different search or view all products.</p>
             </div>
         `;
     } else {
@@ -480,7 +480,7 @@ async function addToCart(productId, quantity = 1) {
         }
     } catch (error) {
         console.error('Failed to add to cart:', error);
-        showAlert('ไม่สามารถเพิ่มสินค้าลงตะกร้าได้', 'danger');
+        showAlert('Failed to add item to cart', 'danger');
     }
 }
 
@@ -497,8 +497,8 @@ async function showCart() {
             cartItems.innerHTML = `
                 <div class="text-center py-4">
                     <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
-                    <h5>ตะกร้าสินค้าว่าง</h5>
-                    <p class="text-muted">เพิ่มสินค้าลงตะกร้าเพื่อเริ่มต้นการสั่งซื้อ</p>
+                    <h5>Your cart is empty</h5>
+                    <p class="text-muted">Add products to your cart to start shopping.</p>
                 </div>
             `;
             checkoutBtn.disabled = true;
@@ -511,7 +511,7 @@ async function showCart() {
                              class="me-3" style="width: 80px; height: 80px; object-fit: cover;" alt="${item.name}">
                         <div class="flex-grow-1">
                             <h6>${item.name}</h6>
-                            <p class="text-muted mb-1">${Number(item.price).toLocaleString()} บาท</p>
+                            <p class="text-muted mb-1">${Number(item.price).toLocaleString()} THB</p>
                             <div class="quantity-controls">
                                 <button class="quantity-btn" onclick="updateCartQuantity(${item.id}, ${item.quantity - 1})">-</button>
                                 <span class="mx-2">${item.quantity}</span>
@@ -520,7 +520,7 @@ async function showCart() {
                             </div>
                         </div>
                         <div class="text-end">
-                            <div class="fw-bold">${Number(item.total).toLocaleString()} บาท</div>
+                            <div class="fw-bold">${Number(item.total).toLocaleString()} THB</div>
                             <button class="btn btn-sm btn-outline-danger mt-1" onclick="removeFromCart(${item.id})">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -539,7 +539,7 @@ async function showCart() {
         
     } catch (error) {
         console.error('Failed to load cart:', error);
-        showAlert('ไม่สามารถโหลดตะกร้าสินค้าได้', 'danger');
+        showAlert('Failed to load cart', 'danger');
     }
 }
 
@@ -564,7 +564,7 @@ async function updateCartQuantity(productId, quantity) {
         }
     } catch (error) {
         console.error('Failed to update cart:', error);
-        showAlert('ไม่สามารถอัปเดตตะกร้าได้', 'danger');
+        showAlert('Failed to update cart', 'danger');
     }
 }
 
@@ -586,14 +586,14 @@ async function removeFromCart(productId) {
         }
     } catch (error) {
         console.error('Failed to remove from cart:', error);
-        showAlert('ไม่สามารถลบสินค้าจากตะกร้าได้', 'danger');
+        showAlert('Failed to remove item from cart', 'danger');
     }
 }
 
 // Checkout functions
 async function showCheckout() {
     if (!currentUser) {
-        showAlert('กรุณาเข้าสู่ระบบก่อนทำการสั่งซื้อ', 'warning');
+        showAlert('Please sign in before checking out', 'warning');
         new bootstrap.Modal(document.getElementById('loginModal')).show();
         return;
     }
@@ -604,28 +604,28 @@ async function showCheckout() {
     checkoutContent.innerHTML = `
         <div class="row">
             <div class="col-md-8">
-                <h5>ข้อมูลการสั่งซื้อ</h5>
+                <h5>Order information</h5>
                 <form id="checkout-form">
                     <div class="mb-3">
-                        <label class="form-label">รหัสโปรโมชั่น (ถ้ามี)</label>
+                        <label class="form-label">Promotion code (optional)</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" id="promotion-code" placeholder="กรอกรหัสโปรโมชั่น">
-                            <button class="btn btn-outline-secondary" type="button" onclick="validatePromotion()">ตรวจสอบ</button>
+                            <input type="text" class="form-control" id="promotion-code" placeholder="Enter promotion code">
+                            <button class="btn btn-outline-secondary" type="button" onclick="validatePromotion()">Validate</button>
                         </div>
                         <div id="promotion-message" class="mt-2"></div>
                     </div>
-                    <button type="submit" class="btn btn-success w-100">ยืนยันการสั่งซื้อ</button>
+                    <button type="submit" class="btn btn-success w-100">Confirm order</button>
                 </form>
             </div>
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-header">
-                        <h6>สรุปคำสั่งซื้อ</h6>
+                        <h6>Order summary</h6>
                     </div>
                     <div class="card-body" id="checkout-summary">
                         <div class="text-center">
                             <div class="spinner"></div>
-                            <p>กำลังโหลด...</p>
+                            <p>Loading...</p>
                         </div>
                     </div>
                 </div>
@@ -650,7 +650,7 @@ async function loadCheckoutSummary() {
         const summaryDiv = document.getElementById('checkout-summary');
         
         if (data.items.length === 0) {
-            summaryDiv.innerHTML = '<p class="text-muted">ตะกร้าสินค้าว่าง</p>';
+            summaryDiv.innerHTML = '<p class="text-muted">Your cart is empty</p>';
             return;
         }
         
@@ -659,7 +659,7 @@ async function loadCheckoutSummary() {
             html += `
                 <div class="d-flex justify-content-between mb-2">
                     <span>${item.name} x${item.quantity}</span>
-                    <span>${Number(item.total).toLocaleString()} บาท</span>
+                    <span>${Number(item.total).toLocaleString()} THB</span>
                 </div>
             `;
         });
@@ -667,8 +667,8 @@ async function loadCheckoutSummary() {
         html += `
             <hr>
             <div class="d-flex justify-content-between fw-bold">
-                <span>รวมทั้งสิ้น</span>
-                <span>${Number(data.total).toLocaleString()} บาท</span>
+                <span>Total</span>
+                <span>${Number(data.total).toLocaleString()} THB</span>
             </div>
         `;
         
@@ -703,7 +703,7 @@ async function processCheckout(e) {
         }
     } catch (error) {
         console.error('Checkout failed:', error);
-        showAlert('ไม่สามารถทำการสั่งซื้อได้', 'danger');
+        showAlert('Failed to process checkout', 'danger');
     }
 }
 
@@ -712,15 +712,15 @@ function showOrderConfirmation(orderId, total) {
     confirmationContent.innerHTML = `
         <div class="text-center">
             <i class="fas fa-check-circle fa-4x text-success mb-4"></i>
-            <h4>สั่งซื้อสำเร็จ!</h4>
-            <p class="text-muted">เลขที่คำสั่งซื้อ: #${orderId}</p>
-            <p class="text-muted">ยอดรวม: ${Number(total).toLocaleString()} บาท</p>
+            <h4>Order placed!</h4>
+            <p class="text-muted">Order ID: #${orderId}</p>
+            <p class="text-muted">Total: ${Number(total).toLocaleString()} THB</p>
             <div class="mt-4">
                 <button class="btn btn-primary me-2" onclick="showReceipt(${orderId})">
-                    <i class="fas fa-receipt"></i> ดูใบเสร็จ
+                    <i class="fas fa-receipt"></i> View receipt
                 </button>
                 <button class="btn btn-outline-secondary" onclick="loadPage('home')">
-                    กลับหน้าแรก
+                    Back to home
                 </button>
             </div>
         </div>
@@ -745,7 +745,7 @@ async function showReceipt(orderId) {
         }
     } catch (error) {
         console.error('Failed to load receipt:', error);
-        showAlert('ไม่สามารถโหลดใบเสร็จได้', 'danger');
+        showAlert('Failed to load receipt', 'danger');
     }
 }
 
@@ -831,7 +831,7 @@ async function loadAdminProducts() {
                     </td>
                     <td>${product.name}</td>
                     <td>${product.category_name || '-'}</td>
-                    <td>${Number(product.price).toLocaleString()} บาท</td>
+                    <td>${Number(product.price).toLocaleString()} THB</td>
                     <td class="${stockClass}">${product.stock}</td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary me-1" onclick="editProduct(${product.id})">
@@ -855,7 +855,7 @@ async function loadAdminProducts() {
         adminContent.innerHTML = html;
     } catch (error) {
         console.error('Failed to load admin products:', error);
-        showAlert('ไม่สามารถโหลดข้อมูลสินค้าได้', 'danger');
+        showAlert('Failed to load products data', 'danger');
     }
 }
 
@@ -904,43 +904,138 @@ function showAlert(message, type = 'info') {
     }, 5000);
 }
 
-// Admin feature functions - now redirect to proper admin pages
+// Admin feature functions - SPA loaders
 async function loadAdminCategories() {
-    window.location.href = 'Admin Categories Management.php';
-}
-
-async function loadAdminUsers() {
-    window.location.href = 'Admin Users Management.php';
-}
-
-async function loadAdminOrders() {
-    window.location.href = 'Admin Orders Management .php';
-}
-
-async function loadAdminPromotions() {
-    window.location.href = 'Admin Promotions Management .php';
-}
-
-async function loadAdminReports() {
-    window.location.href = 'Admin Reports .php';
-}
-
-function showAddProductModal() {
-    window.location.href = 'Admin Products Management .php';
-}
-
-function editProduct(id) {
-    window.location.href = 'Admin Products Management .php?edit=' + id;
-}
-
-function deleteProduct(id) {
-    if (confirm('คุณแน่ใจหรือไม่ที่จะลบสินค้านี้?')) {
-        window.location.href = 'Admin Products Management .php?delete=' + id;
+    const adminContent = document.getElementById('admin-content');
+    try {
+        const res = await fetch('api/products.php?action=categories');
+        const data = await res.json();
+        let html = `
+            <div class="admin-tab">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>Manage Categories</h3>
+                </div>
+                <ul class="list-group">
+        `;
+        data.categories.forEach(c => {
+            html += `<li class="list-group-item d-flex justify-content-between align-items-center">${c.name}<span class="badge bg-secondary">#${c.id}</span></li>`;
+        });
+        html += '</ul></div>';
+        adminContent.innerHTML = html;
+    } catch (e) {
+        showAlert('Failed to load categories', 'danger');
     }
 }
 
-function showUserOrders() {
-    window.location.href = 'Admin Orders Management .php';
+async function loadAdminUsers() {
+    const adminContent = document.getElementById('admin-content');
+    try {
+        const res = await fetch('api/admin/users.php?action=list');
+        const data = await res.json();
+        let html = `
+            <div class="admin-tab">
+                <h3 class="mb-3">Manage Users</h3>
+                <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead><tr><th>ID</th><th>Username</th><th>Role</th><th>Created</th></tr></thead>
+                    <tbody>`;
+        data.users.forEach(u => {
+            html += `<tr><td>${u.id}</td><td>${u.username}</td><td>${u.role}</td><td>${u.created_at}</td></tr>`;
+        });
+        html += `</tbody></table></div></div>`;
+        adminContent.innerHTML = html;
+    } catch (e) {
+        showAlert('Failed to load users', 'danger');
+    }
+}
+
+async function loadAdminOrders() {
+    const adminContent = document.getElementById('admin-content');
+    try {
+        const res = await fetch('api/orders.php?action=list');
+        const data = await res.json();
+        let html = `
+            <div class="admin-tab">
+                <h3 class="mb-3">Manage Orders</h3>
+                <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead><tr><th>ID</th><th>User</th><th>Status</th><th>Total</th><th>Created</th></tr></thead>
+                    <tbody>`;
+        data.orders.forEach(o => {
+            html += `<tr><td>${o.id}</td><td>${o.username || '-'}</td><td>${o.status}</td><td>${Number(o.total).toLocaleString()} THB</td><td>${o.created_at}</td></tr>`;
+        });
+        html += `</tbody></table></div></div>`;
+        adminContent.innerHTML = html;
+    } catch (e) {
+        showAlert('Failed to load orders', 'danger');
+    }
+}
+
+async function loadAdminPromotions() {
+    const adminContent = document.getElementById('admin-content');
+    try {
+        const res = await fetch('api/admin/promotions.php?action=list');
+        const data = await res.json();
+        let html = `
+            <div class="admin-tab">
+                <h3 class="mb-3">Manage Promotions</h3>
+                <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead><tr><th>Code</th><th>Discount</th><th>Expires</th><th>Status</th></tr></thead>
+                    <tbody>`;
+        data.promotions.forEach(p => {
+            html += `<tr><td>${p.code}</td><td>${p.discount}%</td><td>${p.expire_date}</td><td>${p.is_expired ? 'Expired' : 'Active'}</td></tr>`;
+        });
+        html += `</tbody></table></div></div>`;
+        adminContent.innerHTML = html;
+    } catch (e) {
+        showAlert('Failed to load promotions', 'danger');
+    }
+}
+
+async function loadAdminReports() {
+    const adminContent = document.getElementById('admin-content');
+    try {
+        const res = await fetch('api/admin/reports.php?action=dashboard');
+        const data = await res.json();
+        const s = data.stats;
+        let html = `
+            <div class="admin-tab">
+                <h3 class="mb-3">Reports Dashboard</h3>
+                <div class="row g-3">
+                    <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Total Sales</div><div class="fs-5">${Number(s.total_sales).toLocaleString()} THB</div></div></div>
+                    <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Total Orders</div><div class="fs-5">${s.total_orders}</div></div></div>
+                    <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Total Products</div><div class="fs-5">${s.total_products}</div></div></div>
+                    <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Customers</div><div class="fs-5">${s.total_customers}</div></div></div>
+                </div>
+                <div class="mt-4"><h5>Recent Orders</h5>
+                    <div class="table-responsive"><table class="table table-sm">
+                        <thead><tr><th>ID</th><th>User</th><th>Status</th><th>Total</th><th>Created</th></tr></thead>
+                        <tbody>`;
+        s.recent_orders.forEach(o => { html += `<tr><td>${o.id}</td><td>${o.username || '-'}</td><td>${o.status}</td><td>${Number(o.total).toLocaleString()} THB</td><td>${o.created_at}</td></tr>`;});
+        html += `</tbody></table></div></div></div>`;
+        adminContent.innerHTML = html;
+    } catch (e) {
+        showAlert('Failed to load reports', 'danger');
+    }
+}
+
+function showAddProductModal() {
+    showAlert('Product create/edit in SPA is not implemented yet.', 'info');
+}
+
+function editProduct(id) {
+    showAlert('Product edit in SPA is not implemented yet. ID ' + id, 'info');
+}
+
+function deleteProduct(id) {
+    if (confirm('Are you sure you want to delete this product?')) {
+        showAlert('Use API to implement delete if desired.', 'warning');
+    }
+}
+
+async function showUserOrders() {
+    await loadAdminOrders();
 }
 
 async function validatePromotion() {
@@ -948,7 +1043,7 @@ async function validatePromotion() {
     const messageDiv = document.getElementById('promotion-message');
     
     if (!code) {
-        messageDiv.innerHTML = '<div class="alert alert-warning">กรุณากรอกรหัสโปรโมชั่น</div>';
+        messageDiv.innerHTML = '<div class="alert alert-warning">Please enter a promotion code</div>';
         return;
     }
     
@@ -962,6 +1057,6 @@ async function validatePromotion() {
             messageDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
         }
     } catch (error) {
-        messageDiv.innerHTML = '<div class="alert alert-danger">ไม่สามารถตรวจสอบรหัสโปรโมชั่นได้</div>';
+        messageDiv.innerHTML = '<div class="alert alert-danger">Failed to validate promotion code</div>';
     }
 }
