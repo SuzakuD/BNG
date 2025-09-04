@@ -904,41 +904,43 @@ function showAlert(message, type = 'info') {
     }, 5000);
 }
 
-// Placeholder functions for admin features
+// Admin feature functions - now redirect to proper admin pages
 async function loadAdminCategories() {
-    document.getElementById('admin-content').innerHTML = '<div class="admin-tab"><h3>จัดการหมวดหมู่</h3><p>ฟีเจอร์นี้กำลังพัฒนา</p></div>';
+    window.location.href = 'Admin Categories Management.php';
 }
 
 async function loadAdminUsers() {
-    document.getElementById('admin-content').innerHTML = '<div class="admin-tab"><h3>จัดการผู้ใช้</h3><p>ฟีเจอร์นี้กำลังพัฒนา</p></div>';
+    window.location.href = 'Admin Users Management.php';
 }
 
 async function loadAdminOrders() {
-    document.getElementById('admin-content').innerHTML = '<div class="admin-tab"><h3>จัดการคำสั่งซื้อ</h3><p>ฟีเจอร์นี้กำลังพัฒนา</p></div>';
+    window.location.href = 'Admin Orders Management .php';
 }
 
 async function loadAdminPromotions() {
-    document.getElementById('admin-content').innerHTML = '<div class="admin-tab"><h3>จัดการโปรโมชั่น</h3><p>ฟีเจอร์นี้กำลังพัฒนา</p></div>';
+    window.location.href = 'Admin Promotions Management .php';
 }
 
 async function loadAdminReports() {
-    document.getElementById('admin-content').innerHTML = '<div class="admin-tab"><h3>รายงาน</h3><p>ฟีเจอร์นี้กำลังพัฒนา</p></div>';
+    window.location.href = 'Admin Reports .php';
 }
 
 function showAddProductModal() {
-    showAlert('ฟีเจอร์นี้กำลังพัฒนา', 'info');
+    window.location.href = 'Admin Products Management .php';
 }
 
 function editProduct(id) {
-    showAlert('ฟีเจอร์นี้กำลังพัฒนา', 'info');
+    window.location.href = 'Admin Products Management .php?edit=' + id;
 }
 
 function deleteProduct(id) {
-    showAlert('ฟีเจอร์นี้กำลังพัฒนา', 'info');
+    if (confirm('คุณแน่ใจหรือไม่ที่จะลบสินค้านี้?')) {
+        window.location.href = 'Admin Products Management .php?delete=' + id;
+    }
 }
 
 function showUserOrders() {
-    showAlert('ฟีเจอร์นี้กำลังพัฒนา', 'info');
+    window.location.href = 'Admin Orders Management .php';
 }
 
 async function validatePromotion() {

@@ -166,27 +166,27 @@ $categories = $stmt->fetchAll();
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="admin_products.php">
+                            <a class="nav-link" href="Admin Products Management .php">
                                 <i class="fas fa-box"></i> จัดการสินค้า
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="admin_orders.php">
+                            <a class="nav-link" href="Admin Orders Management .php">
                                 <i class="fas fa-shopping-cart"></i> จัดการคำสั่งซื้อ
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link active" href="admin_categories.php">
+                            <a class="nav-link active" href="Admin Categories Management.php">
                                 <i class="fas fa-tags"></i> จัดการหมวดหมู่
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="admin_users.php">
+                            <a class="nav-link" href="Admin Users Management.php">
                                 <i class="fas fa-users"></i> จัดการสมาชิก
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="admin_reports.php">
+                            <a class="nav-link" href="Admin Reports .php">
                                 <i class="fas fa-chart-bar"></i> รายงาน
                             </a>
                         </li>
