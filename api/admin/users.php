@@ -152,19 +152,19 @@ function createUser($pdo, $input) {
     $role = $input['role'] ?? 'user';
     
     if (empty($username) || empty($password)) {
-        throw new Exception('กรุณากรอกข้อมูลให้ครบถ้วน');
+        throw new Exception('Please provide all required fields');
     }
     
     if (strlen($username) < 3) {
-        throw new Exception('ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร');
+        throw new Exception('Username must be at least 3 characters');
     }
     
     if (strlen($password) < 6) {
-        throw new Exception('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+        throw new Exception('Password must be at least 6 characters');
     }
     
     if (!in_array($role, ['user', 'admin'])) {
-        throw new Exception('บทบาทไม่ถูกต้อง');
+        throw new Exception('Invalid role');
     }
     
     // Check if username already exists
@@ -172,7 +172,7 @@ function createUser($pdo, $input) {
     $stmt->execute([$username]);
     
     if ($stmt->fetchColumn() > 0) {
-        throw new Exception('ชื่อผู้ใช้นี้มีอยู่แล้ว');
+        throw new Exception('Username already exists');
     }
     
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
@@ -183,7 +183,7 @@ function createUser($pdo, $input) {
     
     echo json_encode([
         'success' => true,
-        'message' => 'เพิ่มผู้ใช้สำเร็จ',
+        'message' => 'User created successfully',
         'user_id' => $userId
     ]);
 }
@@ -195,16 +195,16 @@ function updateUser($pdo, $input) {
     $password = $input['password'] ?? '';
     
     if (!$id || empty($username) || empty($role)) {
-        throw new Exception('กรุณากรอกข้อมูลให้ครบถ้วน');
+        throw new Exception('Please provide all required fields');
     }
     
     if (!in_array($role, ['user', 'admin'])) {
-        throw new Exception('บทบาทไม่ถูกต้อง');
+        throw new Exception('Invalid role');
     }
     
     // Check if trying to modify self
     if ($id == $_SESSION['user_id']) {
-        throw new Exception('ไม่สามารถแก้ไขข้อมูลของตนเองได้');
+        throw new Exception('You cannot modify your own account');
     }
     
     // Check if username already exists (excluding current user)
@@ -212,12 +212,12 @@ function updateUser($pdo, $input) {
     $stmt->execute([$username, $id]);
     
     if ($stmt->fetchColumn() > 0) {
-        throw new Exception('ชื่อผู้ใช้นี้มีอยู่แล้ว');
+        throw new Exception('Username already exists');
     }
     
     if (!empty($password)) {
         if (strlen($password) < 6) {
-            throw new Exception('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+            throw new Exception('Password must be at least 6 characters');
         }
         
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
@@ -230,7 +230,7 @@ function updateUser($pdo, $input) {
     
     echo json_encode([
         'success' => true,
-        'message' => 'อัปเดตผู้ใช้สำเร็จ'
+        'message' => 'User updated successfully'
     ]);
 }
 
@@ -238,11 +238,11 @@ function deleteUser($pdo) {
     $id = $_GET['id'] ?? 0;
     
     if (!$id) {
-        throw new Exception('ไม่พบรหัสผู้ใช้');
+        throw new Exception('User ID is required');
     }
     
     if ($id == $_SESSION['user_id']) {
-        throw new Exception('ไม่สามารถลบตนเองได้');
+        throw new Exception('You cannot delete your own account');
     }
     
     // Check if user has orders
@@ -250,7 +250,7 @@ function deleteUser($pdo) {
     $stmt->execute([$id]);
     
     if ($stmt->fetchColumn() > 0) {
-        throw new Exception('ไม่สามารถลบผู้ใช้ที่มีคำสั่งซื้อ');
+        throw new Exception('Cannot delete a user with existing orders');
     }
     
     $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
@@ -258,7 +258,7 @@ function deleteUser($pdo) {
     
     echo json_encode([
         'success' => true,
-        'message' => 'ลบผู้ใช้สำเร็จ'
+        'message' => 'User deleted successfully'
     ]);
 }
 ?>
