@@ -1,103 +1,124 @@
 <?php
 session_start();
-include 'db_connect.php';
+require_once __DIR__ . '/config/database.php';
 
-// ตรวจสอบว่า login เป็น admin หรือไม่
-if (!isset($_SESSION['user_id']) || $_SESSION['username'] != 'admin') {
+// ตรวจสอบสิทธิ์ผู้ดูแลระบบด้วยระบบรวมศูนย์
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: login.php");
     exit();
 }
+
+// ใช้งาน PDO (SQLite)
+$pdo = getDB();
 
 // จัดการการกระทำต่างๆ
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // เพิ่มสินค้าใหม่
     if (isset($_POST['add_product'])) {
-        $name = mysqli_real_escape_string($conn, $_POST['product_name']);
-        $description = mysqli_real_escape_string($conn, $_POST['description']);
+        $name = trim($_POST['product_name']);
+        $description = trim($_POST['description']);
         $price = (float)$_POST['price'];
         $stock = (int)$_POST['stock'];
         $category_id = (int)$_POST['category_id'];
         
         // จัดการอัพโหลดรูปภาพ
-        $image_url = '';
-        if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-            $target_dir = "uploads/";
-            if (!file_exists($target_dir)) {
-                mkdir($target_dir, 0777, true);
+        $storedFileName = null;
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $allowedExts = ['jpg','jpeg','png','gif','webp'];
+            $originalName = $_FILES['image']['name'];
+            $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+            if (in_array($ext, $allowedExts)) {
+                $uploadDir = __DIR__ . '/public/images/products';
+                if (!is_dir($uploadDir)) { @mkdir($uploadDir, 0777, true); }
+                $storedFileName = 'product_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                $targetPath = $uploadDir . '/' . $storedFileName;
+                @move_uploaded_file($_FILES['image']['tmp_name'], $targetPath);
             }
-            $image_url = $target_dir . basename($_FILES["image"]["name"]);
-            move_uploaded_file($_FILES["image"]["tmp_name"], $image_url);
         }
         
-        $query = "INSERT INTO products (name, description, price, stock_quantity, category_id, image_url) 
-                  VALUES ('$name', '$description', '$price', '$stock', '$category_id', '$image_url')";
-        mysqli_query($conn, $query);
+        $stmt = $pdo->prepare("INSERT INTO products (name, description, price, stock, category_id, image, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))");
+        $stmt->execute([$name, $description, $price, $stock, $category_id ?: null, $storedFileName]);
         $success_msg = "เพิ่มสินค้าสำเร็จ!";
     }
     
     // เพิ่มหมวดหมู่ใหม่
     if (isset($_POST['add_category'])) {
-        $category_name = mysqli_real_escape_string($conn, $_POST['category_name']);
-        $query = "INSERT INTO categories (name) VALUES ('$category_name')";
-        mysqli_query($conn, $query);
+        $category_name = trim($_POST['category_name']);
+        $stmt = $pdo->prepare("INSERT INTO categories (name) VALUES (?)");
+        $stmt->execute([$category_name]);
         $success_msg = "เพิ่มหมวดหมู่สำเร็จ!";
     }
     
     // อัพเดตสถานะคำสั่งซื้อ
     if (isset($_POST['update_order_status'])) {
         $order_id = (int)$_POST['order_id'];
-        $status = mysqli_real_escape_string($conn, $_POST['status']);
-        $query = "UPDATE orders SET status = '$status' WHERE id = $order_id";
-        mysqli_query($conn, $query);
+        $status = trim($_POST['status']);
+        $stmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
+        $stmt->execute([$status, $order_id]);
         $success_msg = "อัพเดตสถานะคำสั่งซื้อสำเร็จ!";
     }
     
     // ลบสินค้า
     if (isset($_POST['delete_product'])) {
         $product_id = (int)$_POST['product_id'];
-        $query = "DELETE FROM products WHERE id = $product_id";
-        mysqli_query($conn, $query);
+        $stmt = $pdo->prepare("DELETE FROM products WHERE id = ?");
+        $stmt->execute([$product_id]);
         $success_msg = "ลบสินค้าสำเร็จ!";
     }
 }
 
-// ดึงข้อมูลสถิติ
-$stats_query = "SELECT 
+// ดึงข้อมูลสถิติ (ปรับคอลัมน์ให้เข้ากับสคีมาใหม่)
+$stats_stmt = $pdo->query("SELECT 
     (SELECT COUNT(*) FROM products) as total_products,
     (SELECT COUNT(*) FROM orders) as total_orders,
-    (SELECT COUNT(*) FROM users WHERE username != 'admin') as total_users,
-    (SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = 'completed') as total_revenue";
-$stats_result = mysqli_query($conn, $stats_query);
-$stats = mysqli_fetch_assoc($stats_result);
+    (SELECT COUNT(*) FROM users WHERE role != 'admin') as total_users,
+    (SELECT COALESCE(SUM(grand_total), 0) FROM orders WHERE status = 'completed') as total_revenue");
+$stats = $stats_stmt->fetch();
 
-// ดึงข้อมูลสินค้า
-$products_query = "SELECT p.*, c.name as category_name FROM products p 
-                   LEFT JOIN categories c ON p.category_id = c.id 
-                   ORDER BY p.id DESC";
-$products_result = mysqli_query($conn, $products_query);
+// ดึงข้อมูลสินค้า โดยแมปชื่อคอลัมน์ให้เข้ากับ UI เดิม
+$products_stmt = $pdo->query("SELECT 
+    p.id,
+    p.name,
+    p.description,
+    p.price,
+    p.stock as stock_quantity,
+    p.category_id,
+    COALESCE('public/images/products/' || p.image, '') as image_url,
+    c.name as category_name
+FROM products p
+LEFT JOIN categories c ON p.category_id = c.id
+ORDER BY p.id DESC");
+$products = $products_stmt->fetchAll();
 
 // ดึงข้อมูลหมวดหมู่
-$categories_query = "SELECT * FROM categories ORDER BY name";
-$categories_result = mysqli_query($conn, $categories_query);
+$categories_stmt = $pdo->query("SELECT * FROM categories ORDER BY name");
+$categories = $categories_stmt->fetchAll();
 
-// ดึงข้อมูลคำสั่งซื้อ
-$orders_query = "SELECT o.*, u.username FROM orders o 
-                 JOIN users u ON o.user_id = u.id 
-                 ORDER BY o.order_date DESC LIMIT 10";
-$orders_result = mysqli_query($conn, $orders_query);
+// ดึงข้อมูลคำสั่งซื้อ (แมปคอลัมน์)
+$orders_stmt = $pdo->query("SELECT 
+    o.id,
+    o.user_id,
+    u.username,
+    COALESCE(o.grand_total, o.total) as total_amount,
+    o.status,
+    o.created_at as order_date
+FROM orders o
+JOIN users u ON o.user_id = u.id
+ORDER BY o.created_at DESC LIMIT 10");
+$orders = $orders_stmt->fetchAll();
 
-// ดึงข้อมูลผู้ใช้
-$users_query = "SELECT * FROM users WHERE username != 'admin' ORDER BY created_at DESC";
-$users_result = mysqli_query($conn, $users_query);
+// ดึงข้อมูลผู้ใช้ (เติมคอลัมน์ที่อาจไม่มีด้วยค่าว่าง)
+$users_stmt = $pdo->query("SELECT id, username, email, created_at, '' as full_name, '' as phone FROM users WHERE role != 'admin' ORDER BY created_at DESC");
+$users = $users_stmt->fetchAll();
 
-// ดึงข้อมูลยอดขายรายเดือน
-$sales_query = "SELECT DATE_FORMAT(order_date, '%Y-%m') as month, 
-                SUM(total_amount) as total_sales 
-                FROM orders 
-                WHERE status = 'completed' 
-                GROUP BY DATE_FORMAT(order_date, '%Y-%m') 
-                ORDER BY month DESC LIMIT 12";
-$sales_result = mysqli_query($conn, $sales_query);
+// ดึงข้อมูลยอดขายรายเดือน (SQLite strftime)
+$sales_stmt = $pdo->query("SELECT strftime('%Y-%m', created_at) as month,
+                SUM(COALESCE(grand_total, total)) as total_sales
+                FROM orders
+                WHERE status = 'completed'
+                GROUP BY strftime('%Y-%m', created_at)
+                ORDER BY month DESC LIMIT 12");
+$sales_result = $sales_stmt; // สำหรับใช้กับโค้ด JS เดิมด้านล่าง
 ?>
 
 <!DOCTYPE html>
@@ -325,14 +346,9 @@ $sales_result = mysqli_query($conn, $sales_query);
                                     <label class="form-label">หมวดหมู่</label>
                                     <select class="form-control" name="category_id" required>
                                         <option value="">เลือกหมวดหมู่</option>
-                                        <?php 
-                                        mysqli_data_seek($categories_result, 0);
-                                        while ($category = mysqli_fetch_assoc($categories_result)): 
-                                        ?>
-                                            <option value="<?php echo $category['id']; ?>">
-                                                <?php echo $category['name']; ?>
-                                            </option>
-                                        <?php endwhile; ?>
+                                        <?php foreach ($categories as $category): ?>
+                                            <option value="<?php echo $category['id']; ?>"><?php echo $category['name']; ?></option>
+                                        <?php endforeach; ?>
                                     </select>
                                 </div>
                             </div>
@@ -387,7 +403,7 @@ $sales_result = mysqli_query($conn, $sales_query);
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php while ($product = mysqli_fetch_assoc($products_result)): ?>
+                                <?php foreach ($products as $product): ?>
                                 <tr>
                                     <td>
                                         <?php if ($product['image_url']): ?>
@@ -418,7 +434,7 @@ $sales_result = mysqli_query($conn, $sales_query);
                                         </form>
                                     </td>
                                 </tr>
-                                <?php endwhile; ?>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
@@ -456,10 +472,7 @@ $sales_result = mysqli_query($conn, $sales_query);
                         </div>
                         <div class="card-body">
                             <div class="list-group">
-                                <?php 
-                                mysqli_data_seek($categories_result, 0);
-                                while ($category = mysqli_fetch_assoc($categories_result)): 
-                                ?>
+                                <?php foreach ($categories as $category): ?>
                                     <div class="list-group-item d-flex justify-content-between align-items-center">
                                         <?php echo $category['name']; ?>
                                         <span class="badge bg-primary rounded-pill">
@@ -471,7 +484,7 @@ $sales_result = mysqli_query($conn, $sales_query);
                                             ?>
                                         </span>
                                     </div>
-                                <?php endwhile; ?>
+                                <?php endforeach; ?>
                             </div>
                         </div>
                     </div>
@@ -500,11 +513,8 @@ $sales_result = mysqli_query($conn, $sales_query);
                             </thead>
                             <tbody>
                                 <?php 
-                                $all_orders_query = "SELECT o.*, u.username FROM orders o 
-                                                     JOIN users u ON o.user_id = u.id 
-                                                     ORDER BY o.order_date DESC";
-                                $all_orders_result = mysqli_query($conn, $all_orders_query);
-                                while ($order = mysqli_fetch_assoc($all_orders_result)): 
+                                $all_orders_stmt = $pdo->query("SELECT o.id, u.username, o.created_at as order_date, COALESCE(o.grand_total, o.total) as total_amount, o.status, o.shipping_address FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.created_at DESC");
+                                while ($order = $all_orders_stmt->fetch()): 
                                 ?>
                                 <tr>
                                     <td>#<?php echo $order['id']; ?></td>
@@ -567,7 +577,7 @@ $sales_result = mysqli_query($conn, $sales_query);
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php while ($user = mysqli_fetch_assoc($users_result)): ?>
+                                <?php foreach ($users as $user): ?>
                                 <tr>
                                     <td><?php echo $user['id']; ?></td>
                                     <td><?php echo $user['username']; ?></td>
@@ -576,7 +586,7 @@ $sales_result = mysqli_query($conn, $sales_query);
                                     <td><?php echo $user['phone']; ?></td>
                                     <td><?php echo date('d/m/Y', strtotime($user['created_at'])); ?></td>
                                 </tr>
-                                <?php endwhile; ?>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>

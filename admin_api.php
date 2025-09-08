@@ -8,17 +8,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-require_once 'db_connect.php';
+require_once __DIR__ . '/config/database.php';
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
+
+// Use centralized PDO connection (SQLite)
+$conn = getDB();
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 function sendResponse($success, $data = null, $message = '') {
-    echo json_encode([
-        'success' => $success,
-        'data' => $data,
-        'message' => $message
-    ]);
+    $payload = ['success' => $success];
+    if (is_array($data)) {
+        // Merge array data at top-level so UI can access fields directly (e.g., products, users)
+        $payload = array_merge($payload, $data);
+    } elseif (!is_null($data)) {
+        $payload['data'] = $data;
+    }
+    if (!empty($message)) {
+        $payload['message'] = $message;
+    }
+    echo json_encode($payload);
     exit;
 }
 
@@ -62,6 +71,7 @@ switch ($action) {
 }
 
 function getDashboardStats() {
+    requireAdmin();
     global $conn;
     
     try {
@@ -105,6 +115,7 @@ function getDashboardStats() {
 }
 
 function getProducts() {
+    requireAdmin();
     global $conn;
     
     try {
@@ -123,7 +134,7 @@ function addProduct() {
     global $conn;
     
     try {
-        requireAdminAction();
+        requireAdmin();
         $name = sanitizeInput($_POST['name'] ?? '');
         $description = sanitizeInput($_POST['description'] ?? '');
         $price = isset($_POST['price']) ? floatval($_POST['price']) : 0;
@@ -137,7 +148,7 @@ function addProduct() {
             if (!in_array($ext, $allowedExts)) {
                 sendResponse(false, null, 'Invalid image type');
             }
-            $uploadDir = __DIR__ . '/images/products';
+            $uploadDir = __DIR__ . '/public/images/products';
             if (!is_dir($uploadDir)) {
                 if (!mkdir($uploadDir, 0777, true) && !is_dir($uploadDir)) {
                     sendResponse(false, null, 'Failed to create upload directory');
@@ -154,10 +165,7 @@ function addProduct() {
             sendResponse(false, null, 'Please fill all required fields correctly');
         }
         
-        $stmt = $conn->prepare("
-            INSERT INTO products (name, description, price, stock, image, created_at) 
-            VALUES (?, ?, ?, ?, ?, NOW())
-        ");
+        $stmt = $conn->prepare("INSERT INTO products (name, description, price, stock, image, created_at) VALUES (?, ?, ?, ?, ?, datetime('now'))");
         
         $result = $stmt->execute([$name, $description, $price, $stock, $imageFileName]);
         
@@ -173,10 +181,11 @@ function addProduct() {
 }
 
 function updateProduct() {
+    requireAdmin();
     global $conn;
     
     try {
-        requireAdminAction();
+        requireAdmin();
         $id = intval($_POST['id']);
         $name = sanitizeInput($_POST['name'] ?? '');
         $description = sanitizeInput($_POST['description'] ?? '');
@@ -191,7 +200,7 @@ function updateProduct() {
             if (!in_array($ext, $allowedExts)) {
                 sendResponse(false, null, 'Invalid image type');
             }
-            $uploadDir = __DIR__ . '/images/products';
+            $uploadDir = __DIR__ . '/public/images/products';
             if (!is_dir($uploadDir)) {
                 if (!mkdir($uploadDir, 0777, true) && !is_dir($uploadDir)) {
                     sendResponse(false, null, 'Failed to create upload directory');
@@ -236,10 +245,11 @@ function updateProduct() {
 }
 
 function deleteProduct() {
+    requireAdmin();
     global $conn;
     
     try {
-        requireAdminAction();
+        requireAdmin();
         $id = intval($_POST['id']);
         
         if (empty($id)) {
@@ -261,6 +271,7 @@ function deleteProduct() {
 }
 
 function getUsers() {
+    requireAdmin();
     global $conn;
     
     try {
@@ -296,10 +307,7 @@ function addUser() {
         
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         
-        $stmt = $conn->prepare("
-            INSERT INTO users (username, email, password, created_at) 
-            VALUES (?, ?, ?, NOW())
-        ");
+        $stmt = $conn->prepare("INSERT INTO users (username, email, password, created_at) VALUES (?, ?, ?, datetime('now'))");
         
         $result = $stmt->execute([$username, $email, $hashedPassword]);
         
@@ -315,10 +323,11 @@ function addUser() {
 }
 
 function updateUser() {
+    requireAdmin();
     global $conn;
     
     try {
-        requireAdminAction();
+        requireAdmin();
         $id = intval($_POST['id']);
         $username = sanitizeInput($_POST['username']);
         $email = sanitizeInput($_POST['email']);
@@ -363,10 +372,11 @@ function updateUser() {
 }
 
 function deleteUser() {
+    requireAdmin();
     global $conn;
     
     try {
-        requireAdminAction();
+        requireAdmin();
         $id = intval($_POST['id']);
         
         if (empty($id)) {
@@ -415,9 +425,5 @@ function getOrders() {
     }
 }
 
-function requireAdminAction() {
-    if (!isset($_SESSION['username']) || $_SESSION['username'] !== 'admin') {
-        sendResponse(false, null, 'Unauthorized');
-    }
-}
+// Authorization handled by requireAdmin() from config/database.php
 ?>
