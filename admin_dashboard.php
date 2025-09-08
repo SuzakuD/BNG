@@ -91,23 +91,27 @@
     <div id="productModal" class="modal">
         <div class="modal-content">
             <h3 id="productModalTitle">Add Product</h3>
-            <form id="productForm">
+            <form id="productForm" enctype="multipart/form-data">
                 <input type="hidden" id="productId">
                 <div class="form-group">
                     <label class="form-label">Name:</label>
-                    <input type="text" id="productName" class="form-control" required>
+                    <input type="text" id="productName" name="name" class="form-control" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Price:</label>
-                    <input type="number" id="productPrice" class="form-control" step="0.01" required>
+                    <input type="number" id="productPrice" name="price" class="form-control" step="0.01" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Stock:</label>
-                    <input type="number" id="productStock" class="form-control" required>
+                    <input type="number" id="productStock" name="stock" class="form-control" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Description:</label>
-                    <textarea id="productDescription" class="form-control" rows="3"></textarea>
+                    <textarea id="productDescription" name="description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Image:</label>
+                    <input type="file" id="productImage" name="image" class="form-control" accept="image/*">
                 </div>
                 <button type="submit" class="btn btn-primary">Save</button>
                 <button type="button" class="btn btn-secondary" onclick="closeModal('productModal')">Cancel</button>
@@ -122,15 +126,15 @@
                 <input type="hidden" id="userId">
                 <div class="form-group">
                     <label class="form-label">Username:</label>
-                    <input type="text" id="username" class="form-control" required>
+                    <input type="text" id="username" name="username" class="form-control" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Email:</label>
-                    <input type="email" id="userEmail" class="form-control" required>
+                    <input type="email" id="userEmail" name="email" class="form-control" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Password:</label>
-                    <input type="password" id="userPassword" class="form-control" required>
+                    <input type="password" id="userPassword" name="password" class="form-control" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Save</button>
                 <button type="button" class="btn btn-secondary" onclick="closeModal('userModal')">Cancel</button>
@@ -413,6 +417,17 @@
                 console.error('Error:', error);
             }
         });
+
+        // Optional preview for selected image
+        (function attachImagePreview(){
+            const input = document.getElementById('productImage');
+            if (!input) return;
+            input.addEventListener('change', function(){
+                const file = this.files && this.files[0];
+                if (!file) return;
+                // No UI change mandated, so we avoid altering layout; preview could be added if desired.
+            });
+        })();
 
         document.getElementById('userForm').addEventListener('submit', async function(e) {
             e.preventDefault();
