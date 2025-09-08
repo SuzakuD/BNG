@@ -9,6 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once 'db_connect.php';
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
@@ -122,21 +123,43 @@ function addProduct() {
     global $conn;
     
     try {
-        $name = sanitizeInput($_POST['name']);
-        $description = sanitizeInput($_POST['description']);
-        $price = floatval($_POST['price']);
-        $stock = intval($_POST['stock']);
+        requireAdminAction();
+        $name = sanitizeInput($_POST['name'] ?? '');
+        $description = sanitizeInput($_POST['description'] ?? '');
+        $price = isset($_POST['price']) ? floatval($_POST['price']) : 0;
+        $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
+        $imageFileName = null;
+
+        if (isset($_FILES['image']) && is_array($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $allowedExts = ['jpg','jpeg','png','gif','webp'];
+            $originalName = $_FILES['image']['name'];
+            $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+            if (!in_array($ext, $allowedExts)) {
+                sendResponse(false, null, 'Invalid image type');
+            }
+            $uploadDir = __DIR__ . '/images/products';
+            if (!is_dir($uploadDir)) {
+                if (!mkdir($uploadDir, 0777, true) && !is_dir($uploadDir)) {
+                    sendResponse(false, null, 'Failed to create upload directory');
+                }
+            }
+            $imageFileName = 'product_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            $targetPath = $uploadDir . '/' . $imageFileName;
+            if (!move_uploaded_file($_FILES['image']['tmp_name'], $targetPath)) {
+                sendResponse(false, null, 'Failed to upload image');
+            }
+        }
         
         if (empty($name) || $price <= 0 || $stock < 0) {
             sendResponse(false, null, 'Please fill all required fields correctly');
         }
         
         $stmt = $conn->prepare("
-            INSERT INTO products (name, description, price, stock, created_at) 
-            VALUES (?, ?, ?, ?, NOW())
+            INSERT INTO products (name, description, price, stock, image, created_at) 
+            VALUES (?, ?, ?, ?, ?, NOW())
         ");
         
-        $result = $stmt->execute([$name, $description, $price, $stock]);
+        $result = $stmt->execute([$name, $description, $price, $stock, $imageFileName]);
         
         if ($result) {
             sendResponse(true, null, 'Product added successfully');
@@ -153,23 +176,53 @@ function updateProduct() {
     global $conn;
     
     try {
+        requireAdminAction();
         $id = intval($_POST['id']);
-        $name = sanitizeInput($_POST['name']);
-        $description = sanitizeInput($_POST['description']);
-        $price = floatval($_POST['price']);
-        $stock = intval($_POST['stock']);
+        $name = sanitizeInput($_POST['name'] ?? '');
+        $description = sanitizeInput($_POST['description'] ?? '');
+        $price = isset($_POST['price']) ? floatval($_POST['price']) : 0;
+        $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
+        $newImageFileName = null;
+
+        if (isset($_FILES['image']) && is_array($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $allowedExts = ['jpg','jpeg','png','gif','webp'];
+            $originalName = $_FILES['image']['name'];
+            $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+            if (!in_array($ext, $allowedExts)) {
+                sendResponse(false, null, 'Invalid image type');
+            }
+            $uploadDir = __DIR__ . '/images/products';
+            if (!is_dir($uploadDir)) {
+                if (!mkdir($uploadDir, 0777, true) && !is_dir($uploadDir)) {
+                    sendResponse(false, null, 'Failed to create upload directory');
+                }
+            }
+            $newImageFileName = 'product_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            $targetPath = $uploadDir . '/' . $newImageFileName;
+            if (!move_uploaded_file($_FILES['image']['tmp_name'], $targetPath)) {
+                sendResponse(false, null, 'Failed to upload image');
+            }
+        }
         
         if (empty($id) || empty($name) || $price <= 0 || $stock < 0) {
             sendResponse(false, null, 'Please fill all required fields correctly');
         }
         
-        $stmt = $conn->prepare("
-            UPDATE products 
-            SET name = ?, description = ?, price = ?, stock = ? 
-            WHERE id = ?
-        ");
-        
-        $result = $stmt->execute([$name, $description, $price, $stock, $id]);
+        if ($newImageFileName) {
+            $stmt = $conn->prepare("
+                UPDATE products 
+                SET name = ?, description = ?, price = ?, stock = ?, image = ? 
+                WHERE id = ?
+            ");
+            $result = $stmt->execute([$name, $description, $price, $stock, $newImageFileName, $id]);
+        } else {
+            $stmt = $conn->prepare("
+                UPDATE products 
+                SET name = ?, description = ?, price = ?, stock = ? 
+                WHERE id = ?
+            ");
+            $result = $stmt->execute([$name, $description, $price, $stock, $id]);
+        }
         
         if ($result) {
             sendResponse(true, null, 'Product updated successfully');
@@ -186,6 +239,7 @@ function deleteProduct() {
     global $conn;
     
     try {
+        requireAdminAction();
         $id = intval($_POST['id']);
         
         if (empty($id)) {
@@ -225,6 +279,7 @@ function addUser() {
     global $conn;
     
     try {
+        requireAdminAction();
         $username = sanitizeInput($_POST['username']);
         $email = sanitizeInput($_POST['email']);
         $password = $_POST['password'];
@@ -263,6 +318,7 @@ function updateUser() {
     global $conn;
     
     try {
+        requireAdminAction();
         $id = intval($_POST['id']);
         $username = sanitizeInput($_POST['username']);
         $email = sanitizeInput($_POST['email']);
@@ -310,6 +366,7 @@ function deleteUser() {
     global $conn;
     
     try {
+        requireAdminAction();
         $id = intval($_POST['id']);
         
         if (empty($id)) {
@@ -355,6 +412,12 @@ function getOrders() {
         
     } catch (Exception $e) {
         sendResponse(false, null, 'Error fetching orders: ' . $e->getMessage());
+    }
+}
+
+function requireAdminAction() {
+    if (!isset($_SESSION['username']) || $_SESSION['username'] !== 'admin') {
+        sendResponse(false, null, 'Unauthorized');
     }
 }
 ?>
