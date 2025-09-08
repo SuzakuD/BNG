@@ -1021,17 +1021,188 @@ async function loadAdminReports() {
 }
 
 function showAddProductModal() {
-    showAlert('Product create/edit in SPA is not implemented yet.', 'info');
+    if (!currentUser || currentUser.role !== 'admin') {
+        showAlert('Admin only', 'danger');
+        return;
+    }
+    const adminContent = document.getElementById('admin-content');
+    const modalId = 'productEditModal';
+    let modalEl = document.getElementById(modalId);
+    if (!modalEl) {
+        modalEl = document.createElement('div');
+        modalEl.className = 'modal fade';
+        modalEl.id = modalId;
+        modalEl.tabIndex = -1;
+        modalEl.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">เพิ่มสินค้า</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="product-form">
+                            <input type="hidden" id="product-id" value="">
+                            <div class="mb-3">
+                                <label class="form-label">ชื่อสินค้า</label>
+                                <input type="text" class="form-control" id="product-name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">รายละเอียด</label>
+                                <textarea class="form-control" id="product-description" rows="3"></textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">ราคา</label>
+                                    <input type="number" step="0.01" class="form-control" id="product-price" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">สต็อก</label>
+                                    <input type="number" class="form-control" id="product-stock" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">หมวดหมู่ (ID)</label>
+                                <input type="number" class="form-control" id="product-category">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">รูปภาพ</label>
+                                <input type="file" class="form-control" id="product-image-file" accept="image/*">
+                                <input type="hidden" id="product-image">
+                                <div class="form-text">รองรับ JPG, PNG, GIF, WEBP สูงสุด 5MB</div>
+                                <div class="mt-2" id="product-image-preview"></div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">บันทึก</button>
+                        </form>
+                        <div id="product-form-message" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(modalEl);
+    }
+
+    // Reset form
+    modalEl.querySelector('#product-id').value = '';
+    modalEl.querySelector('#product-name').value = '';
+    modalEl.querySelector('#product-description').value = '';
+    modalEl.querySelector('#product-price').value = '';
+    modalEl.querySelector('#product-stock').value = '';
+    modalEl.querySelector('#product-category').value = '';
+    modalEl.querySelector('#product-image').value = '';
+    modalEl.querySelector('#product-image-file').value = '';
+    modalEl.querySelector('#product-image-preview').innerHTML = '';
+    modalEl.querySelector('#product-form-message').innerHTML = '';
+
+    // Bind handlers once
+    const fileInput = modalEl.querySelector('#product-image-file');
+    fileInput.onchange = async function () {
+        if (!fileInput.files || fileInput.files.length === 0) return;
+        const formData = new FormData();
+        formData.append('image', fileInput.files[0]);
+        try {
+            const res = await fetch('api/upload.php', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.success) {
+                modalEl.querySelector('#product-image').value = data.path;
+                modalEl.querySelector('#product-image-preview').innerHTML = `<img src="${data.path}" style="max-width:100%;height:auto;" alt="preview">`;
+            } else {
+                showAlert(data.error || 'Upload failed', 'danger');
+                fileInput.value = '';
+            }
+        } catch (e) {
+            showAlert('Upload failed', 'danger');
+            fileInput.value = '';
+        }
+    };
+
+    const form = modalEl.querySelector('#product-form');
+    form.onsubmit = async function (e) {
+        e.preventDefault();
+        const id = modalEl.querySelector('#product-id').value || null;
+        const payload = {
+            name: modalEl.querySelector('#product-name').value.trim(),
+            description: modalEl.querySelector('#product-description').value.trim(),
+            price: parseFloat(modalEl.querySelector('#product-price').value),
+            stock: parseInt(modalEl.querySelector('#product-stock').value, 10),
+            category_id: modalEl.querySelector('#product-category').value ? parseInt(modalEl.querySelector('#product-category').value, 10) : null,
+            image: modalEl.querySelector('#product-image').value.trim()
+        };
+        try {
+            const res = await fetch('api/products.php?action=' + (id ? 'update' : 'create'), {
+                method: id ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(id ? { ...payload, id: parseInt(id, 10) } : payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                showAlert(data.message, 'success');
+                bootstrap.Modal.getInstance(modalEl)?.hide();
+                await loadAdminProducts();
+            } else {
+                modalEl.querySelector('#product-form-message').innerHTML = `<div class="alert alert-danger">${data.error || 'Save failed'}</div>`;
+            }
+        } catch (e) {
+            modalEl.querySelector('#product-form-message').innerHTML = `<div class="alert alert-danger">Save failed</div>`;
+        }
+    };
+
+    new bootstrap.Modal(modalEl).show();
 }
 
 function editProduct(id) {
-    showAlert('Product edit in SPA is not implemented yet. ID ' + id, 'info');
+    if (!currentUser || currentUser.role !== 'admin') {
+        showAlert('Admin only', 'danger');
+        return;
+    }
+    // Reuse add modal as edit by pre-filling values
+    showAddProductModal();
+    const modalEl = document.getElementById('productEditModal');
+    const messageDiv = modalEl.querySelector('#product-form-message');
+    messageDiv.innerHTML = `<div class="alert alert-info">Loading...</div>`;
+    (async () => {
+        try {
+            const res = await fetch(`api/products.php?action=detail&id=${id}`);
+            const data = await res.json();
+            if (!data.product) {
+                messageDiv.innerHTML = `<div class=\"alert alert-danger\">Product not found</div>`;
+                return;
+            }
+            const p = data.product;
+            modalEl.querySelector('#product-id').value = p.id;
+            modalEl.querySelector('#product-name').value = p.name || '';
+            modalEl.querySelector('#product-description').value = p.description || '';
+            modalEl.querySelector('#product-price').value = p.price || '';
+            modalEl.querySelector('#product-stock').value = p.stock || 0;
+            modalEl.querySelector('#product-category').value = p.category_id || '';
+            modalEl.querySelector('#product-image').value = p.image || '';
+            modalEl.querySelector('#product-image-preview').innerHTML = p.image ? `<img src="${p.image}" style="max-width:100%;height:auto;" alt="preview">` : '';
+            messageDiv.innerHTML = '';
+        } catch (e) {
+            messageDiv.innerHTML = `<div class=\"alert alert-danger\">Failed to load product</div>`;
+        }
+    })();
 }
 
 function deleteProduct(id) {
-    if (confirm('Are you sure you want to delete this product?')) {
-        showAlert('Use API to implement delete if desired.', 'warning');
+    if (!currentUser || currentUser.role !== 'admin') {
+        showAlert('Admin only', 'danger');
+        return;
     }
+    if (!confirm('Are you sure you want to delete this product?')) return;
+    (async () => {
+        try {
+            const res = await fetch(`api/products.php?action=product&id=${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+                showAlert(data.message, 'success');
+                await loadAdminProducts();
+            } else {
+                showAlert(data.error || 'Delete failed', 'danger');
+            }
+        } catch (e) {
+            showAlert('Delete failed', 'danger');
+        }
+    })();
 }
 
 async function showUserOrders() {
